@@ -9,24 +9,47 @@ import { Chart, registerables } from 'chart.js';
 Chart.register(...registerables);
 
 export default {
+  props: {
+    label: {
+      type: String,
+      required: true,
+    },
+    chartData: {
+      type: Array,
+      required: true,
+    },
+    options: {
+      type: Object,
+      default: () => ({
+        responsive: true,
+        maintainAspectRatio: false
+      }),
+    },
+    chartColorOptions: {
+      type: Object,
+      default: () => ({
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1,
+        fill: false,
+      }),
+    },
+  },
   mounted() {
     const ctx = this.$refs.canvas.getContext('2d');
+    const dates = this.chartData.map(d => d.date).reverse();
+    const totals = this.chartData.map(d => d.total).reverse();
+
     new Chart(ctx, {
       type: 'line',
       data: {
-        labels: ['2020/07/05', '2020/07/06', '2020/07/07', '2020/07/08', '2020/07/09', '2020/07/10'],
+        labels: dates,
         datasets: [{
-          label: 'demo',
-          data: [50, 40, 71, 51, 25, 49],
-          fill: false,
-          borderColor: 'rgb(75, 192, 192)',
-          tension: 0.1
-        }]
+          label: this.label,
+          data: totals,
+          ...this.chartColorOptions,
+        }],
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false
-      }
+      options: this.options,
     });
   }
 }
