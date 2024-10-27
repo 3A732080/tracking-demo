@@ -5,16 +5,17 @@
         <v-card>
           <v-container>
             <h1>COVID-19 Tracking Dashboard</h1>
-            <v-row v-if="arrPositive.length">
-              <v-col cols="12">
+            <v-row v-if="arrPositive.length">  // 修改以下的部分
+              <v-col
+                cols="12"
+                v-for="chartData in renderData"
+                :key="chartData.id"
+              >
                 <LineChart
-                  label="Positive"
-                  :chartData="arrPositive"
+                  :label="chartData.label"
+                  :chartData="chartData.data"
                   :options="chartOptions"
-                  :chartColorOptions="{
-                    borderColor: '#EF5350',
-                    backgroundColor: 'rgba(255, 56, 96, 0.1)',
-                  }"
+                  :chartColorOptions="chartData.chartColorOptions"
                 />
               </v-col>
             </v-row>
@@ -49,37 +50,50 @@ export default {
       },
     }
   },
+  computed: {
+    renderData() {
+      const labels = [
+        'Positive',
+        'Hospitalized',
+        'In ICU',
+        'On Ventilators',
+        'Recovered',
+        'Deaths',
+      ]
+      const dataArrays = [
+        this.arrPositive,
+        this.arrHoptialized,
+        this.arrInIcu,
+        this.arrOnVentilators,
+        this.arrRecovered,
+        this.arrDeaths,
+      ]
+      const chartColorOptions = [
+        { borderColor: '#EF5350', backgroundColor: 'rgba(255, 56, 96, 0.1)' },
+        { borderColor: '#FFF176', backgroundColor: 'rgba(191, 182, 63, 0.1)' },
+        { borderColor: '#FFB74D', backgroundColor: 'rgba(239, 109, 9, 0.1)' },
+        { borderColor: '#B3E5FC', backgroundColor: 'rgba(9, 140, 239, 0.1)' },
+        { borderColor: '#00E676', backgroundColor: 'rgba(11, 227, 47, 0.1)' },
+        { borderColor: '#E30B86', backgroundColor: 'rgba(239, 9, 140, 0.1)' },
+      ]
+      return dataArrays.map((data, index) => ({
+        label: labels[index],
+        data,
+        chartColorOptions: chartColorOptions[index],
+      }))
+    },
+  },
   async created() {
-    // 利用解構的方式取出 axios 拿到的 data
-    let { data } = await axios.get(
-      'https://api.covidtracking.com/v1/us/daily.json'
-    )
-    
-    // 只取最近一個月的資料
+    let { data } = await axios.get('https://api.covidtracking.com/v1/us/daily.json')
     data = data.slice(0, 30)
-    
-    // 迭代陣列中的每個元素
     data.forEach((item) => {
-      // 利用 dayjs 將原本的 20201010 改為 2020/10/10
       const date = dayjs(`${item.date}`).format('YYYY/MM/DD')
-      
-      // 利用解構的方式取出 data 內需要的值
-      const {
-        positive,
-        hospitalizedCurrently,
-        inIcuCurrently,
-        recovered,
-        onVentilatorCurrently,
-        death,
-      } = item
-      
-      // 將值推進對應的陣列，每一個值都需要對應一個日期，所以要以物件的方式傳入
-      this.arrPositive.push({ date, total: positive })
-      this.arrHoptialized.push({ date, total: hospitalizedCurrently })
-      this.arrDeaths.push({ date, total: death })
-      this.arrRecovered.push({ date, total: recovered })
-      this.arrOnVentilators.push({ date, total: onVentilatorCurrently })
-      this.arrInIcu.push({ date, total: inIcuCurrently })
+      this.arrPositive.push({ date, total: item.positive })
+      this.arrHoptialized.push({ date, total: item.hospitalizedCurrently })
+      this.arrInIcu.push({ date, total: item.inIcuCurrently })
+      this.arrOnVentilators.push({ date, total: item.onVentilatorCurrently })
+      this.arrRecovered.push({ date, total: item.recovered })
+      this.arrDeaths.push({ date, total: item.death })
     })
   },
 }
